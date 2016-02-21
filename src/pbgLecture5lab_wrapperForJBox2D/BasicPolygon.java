@@ -108,10 +108,12 @@ public class BasicPolygon  {
 	}
 	public static Path2D.Float mkRegularPolygon(int n, float radius) {
 		Path2D.Float p = new Path2D.Float();
+                System.out.println(radius + "/" + 0);
 		p.moveTo(radius, 0);
 		for (int i = 0; i < n; i++) {
 			float x = (float) (Math.cos((Math.PI * 2 * i) / n) * radius);
 			float y = (float) (Math.sin((Math.PI * 2 * i) / n) * radius);
+                        System.out.println(x + "/" + y);
 			p.lineTo(x, y);
 		}
 		p.closePath();
@@ -119,21 +121,21 @@ public class BasicPolygon  {
 	}
         public static Path2D.Float mkRegularRectangle(int n, float radius) {
 		Path2D.Float p = new Path2D.Float();
-		p.moveTo(radius, 0);
-                p.lineTo(radius, 1.2*radius);
-                p.lineTo(4*radius, 1.2*radius);
-                p.lineTo(4*radius, 0);
-                p.lineTo(radius, 0);
+		p.moveTo(2*radius, -1.2*radius / 2);
+                p.lineTo(2*radius, -1.2*radius / 2);
+                p.lineTo(2*radius, 1.2*radius / 2);
+                p.lineTo(-2*radius, 1.2*radius / 2);
+                p.lineTo(-2*radius, -1.2*radius / 2);
                 p.closePath();
 		return p;
 	}
         public static Path2D.Float mkPole(int n, float radius) {
 		Path2D.Float p = new Path2D.Float();
-		p.moveTo(radius, 0);
-                p.lineTo(radius, 14*radius);
-                p.lineTo(1.2f*radius, 14*radius);
-                p.lineTo(1.2*radius, 0);
-                p.lineTo(radius, 0);
+		p.moveTo(.1*radius, -8*radius);
+                p.lineTo(.1*radius, -8*radius);
+                p.lineTo(.1*radius, 8*radius);
+                p.lineTo(-.1*radius, 8*radius);
+                p.lineTo(-.1*radius, -8*radius);
                 p.closePath();
 		return p;
 	}

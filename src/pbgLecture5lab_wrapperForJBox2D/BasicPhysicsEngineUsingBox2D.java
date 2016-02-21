@@ -64,11 +64,16 @@ public class BasicPhysicsEngineUsingBox2D {
 	public List<AnchoredBarrier> barriers;
 	public List<ElasticConnector> connectors;
 	public static MouseJoint mouseJointDef;
+        public BasicPolygon rectangle;
+        public BasicPolygon pole;
+        public Joint poleJoint;
 	
 	public static enum LayoutMode {CONVEX_ARENA, CONCAVE_ARENA, CONVEX_ARENA_WITH_CURVE, PINBALL_ARENA, RECTANGLE, SNOOKER_TABLE};
 	public BasicPhysicsEngineUsingBox2D() {
 		world = new World(new Vec2(0,(float) -GRAVITY));// create Box2D container for everything
 		world.setContinuousPhysics(true);
+                CollisionDetection listener = new CollisionDetection();
+                world.setContactListener(listener);
 
 		particles = new ArrayList<BasicParticle>();
 		polygons = new ArrayList<BasicPolygon>();
@@ -76,7 +81,7 @@ public class BasicPhysicsEngineUsingBox2D {
 		connectors=new ArrayList<ElasticConnector>();
 		LayoutMode layout=LayoutMode.RECTANGLE;
 		// pinball:
-		float rollingFriction=.02f;
+		float rollingFriction=.3f;
 		float r=.3f;
 //			rectangles.add(new BasicRectangle(WORLD_WIDTH/2,WORLD_HEIGHT*3/4,  -4,3, r*4, r*8, 0, 5,  false, Color.BLUE, 1,0.5));
 //			public BasicRectangle(double sx, double sy, double vx, double vy, double width, double height, double orientation, double angularVeloctiy, boolean improvedEuler, Color col, double mass) {
@@ -86,23 +91,21 @@ public class BasicPhysicsEngineUsingBox2D {
 		//polygons.add(new BasicPolygon(WORLD_WIDTH/2-2,WORLD_HEIGHT/2+1.4f,-1.5f*s,1.2f*s, r*2,Color.RED, 1, rollingFriction,3));
 		//polygons.add(new BasicPolygon(WORLD_WIDTH/2-2,WORLD_HEIGHT/2+1.4f,-1.5f*s,1.2f*s, r*4,Color.RED, 1, rollingFriction,3));
 		//polygons.add(new BasicPolygon(WORLD_WIDTH/2-2,WORLD_HEIGHT/2+1.3f,-1.2f*s,1.2f*s, r*2,Color.WHITE, 1, rollingFriction,5));
-		BasicPolygon rectangle = new BasicPolygon(WORLD_WIDTH/2-2,.1f,0,0, r*2,Color.YELLOW, 1, rollingFriction, mkRegularRectangle(4, r*2), 4);
-                BasicPolygon pole = new BasicPolygon(WORLD_WIDTH/2-.8f,.3f,0,0, r*.5f,Color.YELLOW, 50, rollingFriction, mkPole(4, r), 4);
+                //polygons.add(new BasicPolygon(WORLD_WIDTH/2-2,WORLD_HEIGHT/2+1.4f,-1.5f*s,1.2f*s, r*4,Color.RED, 1, rollingFriction,4));
+		rectangle = new BasicPolygon(WORLD_WIDTH/2, .2f,0,0, r*2,Color.YELLOW, 1, rollingFriction, mkRegularRectangle(4, r*2), 4);
+                rectangle.body.setUserData("rectangle");
+                pole = new BasicPolygon(WORLD_WIDTH/2, 3,0,0, r*.5f,Color.YELLOW, 5, rollingFriction, mkPole(4, r), 4);
 		polygons.add(rectangle);
+                pole.body.setUserData("pole");
                 polygons.add(pole);
                 
                 RevoluteJointDef joint = new RevoluteJointDef();
                 joint.bodyA = rectangle.body;
                 joint.bodyB = pole.body;
-                //joint.collideConnected = false;
-                joint.localAnchorA = new Vec2(0, 0);
-                joint.localAnchorB = new Vec2(0, 0);
-                Joint poleJoint = Joint.create(world, joint);
-                Vec2 aux = new Vec2();
-                poleJoint.getAnchorA(aux);
-                System.out.println(aux.x + "/" + aux.y);
-                poleJoint.getAnchorB(aux);
-                System.out.println(aux.x + "/" + aux.y);
+                joint.collideConnected = false;
+                joint.localAnchorA.set(0, 0);
+                joint.localAnchorB.set(0, -2.5f);
+                world.createJoint(joint);
                 
 //		particles.add(new BasicParticle(WORLD_WIDTH/2+2,WORLD_HEIGHT/2+2f,-1.2f*s,-1.4f*s, r,Color.BLUE, 2, 0));
 //		particles.add(new BasicParticle(3*r+WORLD_WIDTH/2,WORLD_HEIGHT/2,2,6.7f, r*3,Color.BLUE, 90, 0));
@@ -192,10 +195,10 @@ public class BasicPhysicsEngineUsingBox2D {
 				// rectangle walls:
 				// anticlockwise listing
 				// These would be better created as a JBox2D "chain" type object for efficiency and potentially better collision detection at joints. 
-				barriers.add(new AnchoredBarrier_StraightLine(0, 0, WORLD_WIDTH, 0, Color.WHITE));
-				barriers.add(new AnchoredBarrier_StraightLine(WORLD_WIDTH, 0, WORLD_WIDTH, WORLD_HEIGHT, Color.WHITE));
-				barriers.add(new AnchoredBarrier_StraightLine(WORLD_WIDTH, WORLD_HEIGHT, 0, WORLD_HEIGHT, Color.WHITE));
-				barriers.add(new AnchoredBarrier_StraightLine(0, WORLD_HEIGHT, 0, 0, Color.WHITE));
+				barriers.add(new AnchoredBarrier_StraightLine(0, 0, WORLD_WIDTH, 0, Color.WHITE, "bottom"));
+				barriers.add(new AnchoredBarrier_StraightLine(WORLD_WIDTH, 0, WORLD_WIDTH, WORLD_HEIGHT, Color.WHITE, "right"));
+				barriers.add(new AnchoredBarrier_StraightLine(WORLD_WIDTH, WORLD_HEIGHT, 0, WORLD_HEIGHT, Color.WHITE, "top"));
+				barriers.add(new AnchoredBarrier_StraightLine(0, WORLD_HEIGHT, 0, 0, Color.WHITE, "left"));
 				break;
 			}
 			case CONVEX_ARENA: {
@@ -324,11 +327,21 @@ public class BasicPhysicsEngineUsingBox2D {
 	public void update() {
 		int VELOCITY_ITERATIONS=NUM_EULER_UPDATES_PER_SCREEN_REFRESH;
 		int POSITION_ITERATIONS=NUM_EULER_UPDATES_PER_SCREEN_REFRESH;
+                if (BasicKeyListener.isRotateLeftKeyPressed()) {
+                        rectangle.body.applyForceToCenter(new Vec2(-15, 0));
+                } else if (BasicKeyListener.isRotateRightKeyPressed()) {
+                        rectangle.body.applyForceToCenter(new Vec2(15, 0));
+                }
 		for (BasicParticle p:particles) {
 			// give the objects an opportunity to add any bespoke forces, e.g. rolling friction
 			p.notificationOfNewTimestep();
 		}
 		for (BasicPolygon p:polygons) {
+                    /*if (p == rectangle) {
+                        if (p.body.getPosition().x - 1.23 <= 0 || p.body.getPosition().x + 1.23 >= WORLD_WIDTH) {
+                            System.exit(1);
+                        }
+                    } */
 			// give the objects an opportunity to add any bespoke forces, e.g. rolling friction
 			p.notificationOfNewTimestep();
 		}

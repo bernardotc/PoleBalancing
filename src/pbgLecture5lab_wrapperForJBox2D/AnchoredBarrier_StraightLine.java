@@ -43,6 +43,29 @@ public class AnchoredBarrier_StraightLine extends AnchoredBarrier {
 		
 		this.col=col;
 	}
+        
+        public AnchoredBarrier_StraightLine(float startx, float starty, float endx, float endy, Color col, String userData) {
+		
+		
+		startPos=new Vec2(startx,starty);
+		endPos=new Vec2(endx,endy);
+
+		World w=BasicPhysicsEngineUsingBox2D.world;
+
+		BodyDef bodyDef = new BodyDef();
+		bodyDef.type = BodyType.STATIC;
+		bodyDef.position = new Vec2(startx,starty);
+                bodyDef.userData = userData;
+		Body body = w.createBody(bodyDef);
+		this.body=body;
+		Vec2[] vertices = new Vec2[] { new Vec2(), new Vec2(endx-startx, endy-starty) };
+		ChainShape chainShape = new ChainShape();
+		chainShape.createChain(vertices, vertices.length);
+		body.createFixture(chainShape, 0);
+		
+		
+		this.col=col;
+	}
 
 	@Override
 	public void draw(Graphics2D g) {
